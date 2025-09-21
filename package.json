@@ -1,0 +1,223 @@
+{
+  "name": "ai-code",
+  "displayName": "Local Ai Coder",
+  "publisher": "local-dev",
+  "version": "0.0.1",
+  "description": "A fully local AI coding assistant for Visual Studio Code with project-wide context and guarded command/file execution.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/ai-code.git"
+  },
+  "bugs": {
+    "url": "https://example.com/ai-code/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "assistant",
+    "code",
+    "local"
+  ],
+  "activationEvents": [
+    "onCommand:ai-code.askAssistant",
+    "onCommand:ai-code.resetConversation",
+    "onCommand:ai-code.showLastPlan",
+    "onCommand:ai-code.openSettings",
+    "onCommand:ai-code.addOllamaModel",
+    "onView:ai-code.chatView",
+    "onCommand:ai-code.downloadModel",
+    "onView:ai-code.quickActions"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "lint": "echo 'No linters configured'",
+    "test": "npm run compile && node --test --experimental-test-module-mocks dist/test"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "ai-code.askAssistant",
+        "title": "Local Ai Coder: Ask",
+        "category": "Local Ai Coder"
+      },
+      {
+        "command": "ai-code.resetConversation",
+        "title": "Local Ai Coder: Reset Conversation",
+        "category": "Local Ai Coder"
+      },
+      {
+        "command": "ai-code.showLastPlan",
+        "title": "Local Ai Coder: Show Last Plan",
+        "category": "Local Ai Coder"
+      },
+      {
+        "command": "ai-code.openSettings",
+        "title": "Local Ai Coder: Open Settings",
+        "category": "Local Ai Coder"
+      },
+      {
+        "command": "ai-code.addOllamaModel",
+        "title": "Local Ai Coder: Add Ollama Model",
+        "category": "Local Ai Coder"
+      },
+      {
+        "command": "ai-code.downloadModel",
+        "title": "Local Ai Coder: Download Model",
+        "category": "Local Ai Coder"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Local Ai Coder",
+      "properties": {
+        "ai-code.modelId": {
+          "type": "string",
+          "default": "ollama:qwen3:4b",
+          "description": "Ollama model identifier to stream from the local daemon (use the form ollama:model).",
+          "markdownDescription": "Model identifier to stream from a running Ollama daemon. Use [Download model](command:ai-code.downloadModel) for the default model or [Add new Ollama model](command:ai-code.addOllamaModel) to pull additional ones."
+        },
+        "ai-code.maxNewTokens": {
+          "type": "number",
+          "default": 512,
+          "minimum": 32,
+          "maximum": 4096,
+          "description": "Maximum number of tokens the assistant will generate per response."
+        },
+        "ai-code.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature to control response creativity."
+        },
+        "ai-code.context.maxFiles": {
+          "type": "number",
+          "default": 40,
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Maximum number of project files to stream into the assistant's context."
+        },
+        "ai-code.context.maxFileSize": {
+          "type": "number",
+          "default": 200000,
+          "minimum": 1024,
+          "description": "Maximum size (in bytes) for any individual file included in the context."
+        },
+        "ai-code.context.maxTotalSize": {
+          "type": "number",
+          "default": 1500000,
+          "minimum": 20480,
+          "description": "Maximum total size (in bytes) of all files combined in the context window."
+        },
+        "ai-code.allowCommandExecution": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow the assistant to suggest shell/Powershell commands that require user approval before execution."
+        },
+        "ai-code.shell": {
+          "type": "string",
+          "default": "default",
+          "description": "Shell executable to use for approved commands. Use 'powershell' on Windows to force PowerShell usage."
+        },
+        "ai-code.context.includeBinary": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow binary files to be included in the context (not recommended)."
+        },
+        "ai-code.context.excludeGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional glob patterns to exclude when collecting context."
+        },
+        "ai-code.context.overrideDefaultExcludes": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, ignore the built-in exclude list and rely solely on context.excludeGlobs."
+        },
+        "ai-code.context.prioritizeChangedFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Gather Git changed and staged files before scanning the rest of the workspace."
+        },
+        "ai-code.ollama.requestTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "description": "Timeout in milliseconds for Ollama REST requests such as /api/pull and /api/show."
+        },
+        "ai-code.ollama.generationTimeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 1000,
+          "description": "Timeout in milliseconds for Ollama generation streaming requests."
+        },
+        "ai-code.sampling.topP": {
+          "type": "number",
+          "default": 0.95,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Top-p nucleus sampling value forwarded to Ollama generations."
+        },
+        "ai-code.sampling.repetitionPenalty": {
+          "type": "number",
+          "default": 1.05,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Repetition penalty applied during generation."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ai-code",
+          "title": "Local Ai Coder",
+          "icon": "media/local-ai-coder-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ai-code": [
+        {
+          "type": "webview",
+          "id": "ai-code.chatView",
+          "name": "Local Ai Coder",
+          "contextualTitle": "Local Ai Coder"
+        },
+        {
+          "id": "ai-code.quickActions",
+          "name": "Quick Actions"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "ai-code.openSettings",
+          "when": "view == ai-code.chatView",
+          "group": "navigation@99",
+          "icon": "$(gear)"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.1",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  }
+}
