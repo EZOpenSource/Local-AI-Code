@@ -25,7 +25,7 @@ export class ResponseParser {
   public parse(raw: string): AssistantPlan {
     const parsed = this.safeParse(raw);
     const summary = this.expectString(parsed.summary, 'summary');
-    const message = this.expectString(parsed.message, 'message');
+    const message = this.expectString(parsed.message, 'message', { allowEmpty: true });
     const steps = this.parseSteps(parsed.steps);
     const liveLog = this.parseStringArray(parsed.liveLog ?? parsed.workLog ?? parsed.log, 'liveLog');
     const qaFindings = this.parseStringArray(parsed.qaFindings ?? parsed.qualityFindings, 'qaFindings');
@@ -297,9 +297,16 @@ export class ResponseParser {
     return candidate.length > 0 ? candidate : null;
   }
 
-  private expectString(value: unknown, field: string): string {
-    if (typeof value !== 'string' || value.trim().length === 0) {
+  private expectString(value: unknown, field: string, options?: { allowEmpty?: boolean }): string {
+    if (typeof value !== 'string') {
       throw new Error(`Assistant response field \`${field}\` is missing or empty.`);
+    }
+    const trimmed = value.trim();
+    if (!options?.allowEmpty && trimmed.length === 0) {
+      throw new Error(`Assistant response field \`${field}\` is missing or empty.`);
+    }
+    if (options?.allowEmpty) {
+      return trimmed.length === 0 ? '' : value;
     }
     return value;
   }
@@ -431,7 +438,8 @@ export class ResponseParser {
       if (!type) {
         continue;
       }
-      const path = this.getFirstString(record, ['path', 'file', 'target', 'uri', 'filename', 'filePath']);
+      const rawPath = this.getFirstString(record, ['path', 'file', 'target', 'uri', 'filename', 'filePath']);
+      const path = rawPath ? this.normalizeFilePath(rawPath) : '';
       if (!path) {
         continue;
       }
@@ -553,7 +561,7 @@ export class ResponseParser {
     }
     const remainder = remainderTokens.join(' ');
     const [pathPart, description] = this.splitValueAndDescription(remainder);
-    const path = this.trimMatchingQuotes(pathPart);
+    const path = this.normalizeFilePath(pathPart);
     if (!path) {
       return null;
     }
@@ -599,11 +607,40 @@ export class ResponseParser {
     return [command, description.length > 0 ? description : null];
   }
 
-  private trimMatchingQuotes(value: string): string {
-    const trimmed = value.trim();
-    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith('\'') && trimmed.endsWith('\''))) {
-      return trimmed.slice(1, -1).trim();
+  private normalizeFilePath(value: string): string {
+    let result = value.trim();
+    if (!result) {
+      return '';
     }
-    return trimmed;
+
+    const wrappers: Array<[string, string]> = [
+      ['"', '"'],
+      ['\'', '\''],
+      ['`', '`'],
+      ['“', '”'],
+      ['‘', '’'],
+      ['«', '»'],
+      ['**', '**'],
+      ['*', '*'],
+    ];
+
+    let updated = true;
+    while (updated) {
+      updated = false;
+      for (const [open, close] of wrappers) {
+        if (
+          result.length >= open.length + close.length &&
+          result.startsWith(open) &&
+          result.endsWith(close)
+        ) {
+          result = result.slice(open.length, result.length - close.length).trim();
+          updated = true;
+        }
+      }
+    }
+
+    result = result.replace(/^[*`]+/, '').replace(/[*`]+$/, '').trim();
+
+    return result;
   }
 }

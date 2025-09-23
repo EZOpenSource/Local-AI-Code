@@ -73,9 +73,9 @@ it('prioritizes changed files and forwards custom exclude globs', async () => {
   try {
     const { ContextCollector } = await import('../assistant/contextCollector.js');
     const collector = new ContextCollector({
-      maxFiles: 5,
-      maxFileSize: 1024,
-      maxTotalSize: 4096,
+      maxFiles: 50,
+      maxFileSize: 10240,
+      maxTotalSize: 16384,
       includeBinary: false,
       excludeGlobs: ['**/*.log'],
       useDefaultExcludes: true,

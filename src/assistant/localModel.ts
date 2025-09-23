@@ -496,11 +496,22 @@ export class LocalModel {
     return new Promise<Array<{ generated_text: string }>>((resolve, reject) => {
       let cancellationListener: vscode.Disposable | undefined;
       let settled = false;
+      let inactivityTimer: NodeJS.Timeout | undefined;
+      let req!: http.ClientRequest;
+
+      const clearInactivityTimer = () => {
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = undefined;
+        }
+      };
+
       const finalize = (result: Array<{ generated_text: string }> | Error) => {
         if (settled) {
           return;
         }
         settled = true;
+        clearInactivityTimer();
         cancellationListener?.dispose();
         if (result instanceof Error) {
           reject(result);
@@ -509,7 +520,19 @@ export class LocalModel {
         }
       };
 
-      const req = client.request(requestOptions, res => {
+      const refreshInactivityTimer = () => {
+        if (settled || config.generationTimeoutMs <= 0) {
+          return;
+        }
+        clearInactivityTimer();
+        inactivityTimer = setTimeout(() => {
+          const timeoutError = new Error('Ollama generation timed out.');
+          req.destroy(timeoutError);
+          finalize(timeoutError);
+        }, config.generationTimeoutMs);
+      };
+
+      req = client.request(requestOptions, res => {
         if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
           const errorChunks: string[] = [];
           res.setEncoding('utf8');
@@ -556,6 +579,7 @@ export class LocalModel {
         };
 
         res.on('data', chunk => {
+          refreshInactivityTimer();
           buffer += chunk;
           let newlineIndex = buffer.indexOf('\n');
           while (newlineIndex !== -1) {
@@ -587,11 +611,7 @@ export class LocalModel {
         finalize(error instanceof Error ? error : new Error(String(error)));
       });
 
-      req.setTimeout(config.generationTimeoutMs, () => {
-        const timeoutError = new Error('Ollama generation timed out.');
-        req.destroy(timeoutError);
-        finalize(timeoutError);
-      });
+      refreshInactivityTimer();
 
       req.write(payload);
       req.end();

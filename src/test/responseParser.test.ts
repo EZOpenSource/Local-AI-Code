@@ -68,6 +68,24 @@ describe('ResponseParser', () => {
     assert.deepEqual(plan.steps, []);
   });
 
+  it('allows empty message strings', () => {
+    const parser = new ResponseParser();
+    const raw = JSON.stringify({
+      summary: 'ready',
+      message: '',
+      steps: [],
+      liveLog: [],
+      qaFindings: [],
+      testResults: [],
+      commandRequests: [],
+      fileActions: [],
+    });
+
+    const plan = parser.parse(raw);
+    assert.equal(plan.summary, 'ready');
+    assert.equal(plan.message, '');
+  });
+
   it('ignores invalid step entries gracefully', () => {
     const parser = new ResponseParser();
     const raw = JSON.stringify({
@@ -205,6 +223,40 @@ describe('ResponseParser', () => {
         type: 'delete',
         path: 'dist',
         description: 'remove build artifacts',
+      },
+    ]);
+  });
+
+  it('sanitizes markdown formatting around file paths', () => {
+    const parser = new ResponseParser();
+    const raw = JSON.stringify({
+      summary: 'formatting cleanup',
+      message: 'strip emphasis tokens',
+      steps: [],
+      liveLog: [],
+      qaFindings: [],
+      testResults: [],
+      fileActions: [
+        {
+          type: 'create',
+          path: '**src/hello.py**',
+          content: "print('hello world')\n",
+        },
+        'Create src/app.py** — update script',
+      ],
+    });
+
+    const plan = parser.parse(raw);
+    assert.deepEqual(plan.fileActions, [
+      {
+        type: 'create',
+        path: 'src/hello.py',
+        content: "print('hello world')\n",
+      },
+      {
+        type: 'create',
+        path: 'src/app.py',
+        description: 'update script',
       },
     ]);
   });

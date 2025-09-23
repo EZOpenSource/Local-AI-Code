@@ -50,7 +50,7 @@ export class SettingsViewProvider implements vscode.TreeDataProvider<SettingsIte
   }
 
   public openExtensionSettings(): Thenable<void> {
-    return vscode.commands.executeCommand('workbench.action.openSettings', '@ext:local-dev.ai-code');
+    return vscode.commands.executeCommand('workbench.action.openSettings', '@:ai-code');
   }
 }
 

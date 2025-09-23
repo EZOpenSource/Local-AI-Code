@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (settingsProvider) {
         void settingsProvider.openExtensionSettings();
       } else {
-        void vscode.commands.executeCommand('workbench.action.openSettings', '@ext:local-dev.ai-code');
+        void vscode.commands.executeCommand('workbench.action.openSettings', '@:ai-code');
       }
     })
   );
