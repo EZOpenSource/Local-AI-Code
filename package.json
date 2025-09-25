@@ -2,7 +2,7 @@
   "name": "Local-Ai-Code",
   "displayName": "Local AI",
   "publisher": "EZOpenSource",
-  "version": "0.0.8 ",
+  "version": "0.0.9 ",
   "description": "A fully local AI coding assistant for Visual Studio Code with project-wide context and guarded command/file execution.",
   "license": "MIT",
   "repository": {
