@@ -1,3 +1,7 @@
+# Github Repository 
+
+https://github.com/EZOpenSource/Local-AI-Code
+
 # Local Ai Coder for Visual Studio Code
 
 Local Ai Coder is a Visual Studio Code extension that embeds a fully local AI coding partner directly inside the editor. The assistant reads your project, drafts step-by-step plans, proposes shell/PowerShell commands, and prepares file changes—all of which are executed only after you explicitly approve them. No external APIs are called at runtime; inference is handled by a locally running [Ollama](https://ollama.com/) daemon that you control.
